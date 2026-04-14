@@ -10,6 +10,54 @@
 
 Automated monitoring script for OpenClaw Gateway with auto-restart and troubleshooting capabilities.
 
+## 🚀 Quick Start
+
+### One-line Install (Recommended)
+
+Run this command **directly from GitHub** — no download required:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -UseBasicParsing).Content" -RunNow
+```
+
+### Manual Install
+
+1. Download scripts from [GitHub](https://github.com/18146706992-sketch/openclaw-gateway-monitor/tree/main/scripts)
+2. Open PowerShell in the scripts directory
+3. Run:
+```powershell
+.\install-openclaw-monitor.ps1 -RunNow
+```
+
+## 🛠️ Management Commands
+
+### Check Status
+```powershell
+Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
+```
+
+### View Logs (Real-time)
+```powershell
+Get-Content 'D:\.openclaw\logs\openclaw-monitor\openclaw-monitor-20260415.log' -Tail 20 -Wait
+```
+
+### Stop Monitor
+```powershell
+Stop-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+```
+
+### Restart Monitor
+```powershell
+Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+```
+
+### Uninstall
+```powershell
+powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -UseBasicParsing).Content" -Uninstall
+```
+
+---
+
 ## ✨ Features
 
 - **Auto-start at boot**: Windows Scheduled Task integration for hands-free operation
@@ -17,38 +65,6 @@ Automated monitoring script for OpenClaw Gateway with auto-restart and troublesh
 - **Auto-repair**: Automatic restart with retry mechanism (3 attempts, 60s interval)
 - **Troubleshooting**: Auto-generates diagnostic reports when repair fails
 - **Logging**: Logs saved to `openclaw-monitor\` under your OpenClaw state directory
-
-## 🚀 Quick Start
-
-### Installation (Auto-start at boot)
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -RunNow
-```
-
-### Single Check Mode
-
-```powershell
-powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1 -Once
-```
-
-### Continuous Monitoring
-
-```powershell
-powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1
-```
-
-### Custom Parameters
-
-```powershell
-powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1 -CheckInterval 30 -MaxRetries 5 -RetryWait 120
-```
-
-### Uninstall
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -Uninstall
-```
 
 ## 📡 Parameters
 
@@ -71,8 +87,6 @@ Logs are automatically saved to your OpenClaw state directory:
     └── diagnostic-YYYYMMDD-HHmmss.txt
 ```
 
-**Default log path**: `D:\.openclaw\logs\openclaw-monitor\`
-
 ## 🔄 Workflow
 
 ```
@@ -89,22 +103,6 @@ Gateway Status Check
    All failed → Run diagnostics
         │
    Generate report → Save to diagnostics\
-```
-
-## 🛠️ Management Commands
-
-```powershell
-# Check scheduled task status
-Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
-
-# View real-time logs
-Get-Content 'D:\.openclaw\logs\openclaw-monitor\openclaw-monitor-20260415.log' -Tail 20 -Wait
-
-# Stop monitor
-Stop-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
-
-# Start monitor manually
-Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 ```
 
 ## ✅ Health Criteria
