@@ -15,7 +15,7 @@ Automated monitoring script for OpenClaw Gateway with auto-restart and troublesh
 ### One-line Install
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\openclaw-monitor.ps1\"; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -RunNow"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\openclaw-monitor.ps1') -UseBasicParsing; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -RunNow"
 ```
 
 > If you get an error, wait 2-3 minutes and try again (GitHub CDN may need time to update).
@@ -34,7 +34,7 @@ powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr
 
 ### Check Status
 ```powershell
-Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
+Get-Process powershell | Where-Object {$_.CommandLine -match 'openclaw-monitor'}
 ```
 
 ### View Logs
@@ -44,25 +44,26 @@ Get-Content "$env:OPENCLAW_STATE_DIR\logs\openclaw-monitor\openclaw-monitor-$(Ge
 
 ### Stop Monitor
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -Stop"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -Stop"
 ```
 
 ### Restart Monitor
 ```powershell
-Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\openclaw-monitor.ps1') -UseBasicParsing; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -RunNow"
 ```
 
 ### Uninstall
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -Uninstall"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -Uninstall"
 ```
 
 ---
 
 ## ✨ Features
 
-- **Auto-start at boot**: Windows Scheduled Task integration
-- **Health monitoring**: Uses `openclaw health` and `gateway status`
+- **Auto-start at boot**: Windows Startup Folder (no admin required)
+- **Hidden window**: Runs silently in background
+- **Single instance**: Prevents multiple monitors running at once
 - **Auto-repair**: 3 retries with 60s interval
 - **Troubleshooting**: Auto-generates diagnostic reports
 - **Logging**: Saved to `openclaw-monitor\` under OpenClaw state directory
