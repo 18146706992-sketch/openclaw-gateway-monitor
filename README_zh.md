@@ -17,7 +17,7 @@ OpenClaw Gateway 自动化监控脚本，支持自动重启和故障排除。
 **无需下载**，直接运行以下命令：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -UseBasicParsing).Content" -RunNow
+powershell -ExecutionPolicy Bypass -Command "$temp=[System.IO.Path]::GetTempFileName()+'.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile $temp; & $temp -RunNow; Remove-Item $temp"
 ```
 
 ### 手动安装
@@ -53,7 +53,7 @@ Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 
 ### 卸载
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -UseBasicParsing).Content" -Uninstall
+powershell -ExecutionPolicy Bypass -Command "$temp=[System.IO.Path]::GetTempFileName()+'.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile $temp; & $temp -Uninstall; Remove-Item $temp"
 ```
 
 ---
