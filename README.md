@@ -4,116 +4,130 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078d4.svg)](https://www.microsoft.com/windows/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-[English](README_en.md) | [简体中文](README_zh.md)
+[English](README.md) | [简体中文](README_zh.md)
 
 ---
 
-OpenClaw Gateway 自动化监控脚本，支持自动重启和故障排除。
+Automated monitoring script for OpenClaw Gateway with auto-restart and troubleshooting capabilities.
 
-## ✨ 功能特性
+## ✨ Features
 
-- **开机自启动**：通过 Windows 计划任务实现开机自动运行
-- **健康监控**：使用 `openclaw health` 和 `gateway status` 命令检测状态
-- **自动修复**：重启失败时自动重试（默认 3 次，间隔 60 秒）
-- **故障排除**：修复失败时自动执行诊断并生成报告
-- **日志记录**：日志保存到 `D:\.openclaw\logs\`
+- **Auto-start at boot**: Windows Scheduled Task integration for hands-free operation
+- **Health monitoring**: Uses `openclaw health` and `gateway status` for reliable detection
+- **Auto-repair**: Automatic restart with retry mechanism (3 attempts, 60s interval)
+- **Troubleshooting**: Auto-generates diagnostic reports when repair fails
+- **Logging**: Logs saved to `openclaw-monitor\` under your OpenClaw state directory
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 安装（自动开机自启动）
+### Installation (Auto-start at boot)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -RunNow
 ```
 
-### 常用命令
+### Single Check Mode
 
 ```powershell
-# 单次检测模式
 powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1 -Once
+```
 
-# 持续监控模式（默认 60 秒检测一次）
+### Continuous Monitoring
+
+```powershell
 powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1
+```
 
-# 自定义参数
+### Custom Parameters
+
+```powershell
 powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1 -CheckInterval 30 -MaxRetries 5 -RetryWait 120
+```
 
-# 卸载
+### Uninstall
+
+```powershell
 powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -Uninstall
 ```
 
-## 📡 参数说明
+## 📡 Parameters
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `-CheckInterval` | 60 | 检测间隔（秒） |
-| `-MaxRetries` | 3 | 最大重启重试次数 |
-| `-RetryWait` | 60 | 重试间隔（秒） |
-| `-Once` | false | 单次检测后退出 |
-| `-LogDir` | `D:\.openclaw\logs` | 日志目录 |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `-CheckInterval` | 60 | Detection interval in seconds |
+| `-MaxRetries` | 3 | Maximum restart retry attempts |
+| `-RetryWait` | 60 | Wait time between retries (seconds) |
+| `-Once` | false | Run single check and exit |
+| `-LogDir` | auto | Log directory (auto-detected) |
 
-## 🔄 工作流程
+## 📁 Log Directory
+
+Logs are automatically saved to your OpenClaw state directory:
 
 ```
-检测 Gateway 状态
-       │
-   正常 → 不做任何操作
-       │
-   异常 → 启动/重启 Gateway
-       │
-   等待 60 秒 → 再次检测
-       │
-   依然异常 → 重试（最多 3 次）
-       │
-   全部失败 → 执行故障排除
-       │
-   生成诊断报告 → 保存到 diagnostics\
+<OPENCLAW_STATE_DIR>\logs\openclaw-monitor\
+├── openclaw-monitor-YYYYMMDD.log    # Daily monitor logs
+└── diagnostics\                      # Diagnostic reports
+    └── diagnostic-YYYYMMDD-HHmmss.txt
 ```
 
-## 📁 日志文件
+**Default log path**: `D:\.openclaw\logs\openclaw-monitor\`
 
-| 文件 | 说明 |
-|------|------|
-| `D:\.openclaw\logs\openclaw-monitor-YYYYMMDD.log` | 每日监控日志 |
-| `D:\.openclaw\logs\diagnostics\diagnostic-YYYYMMDD-HHmmss.txt` | 诊断报告 |
+## 🔄 Workflow
 
-## 🛠️ 常用管理命令
+```
+Gateway Status Check
+        │
+   Normal → No action
+        │
+   Abnormal → Start/Restart Gateway
+        │
+   Wait 60s → Check again
+        │
+   Still down → Retry (max 3 times)
+        │
+   All failed → Run diagnostics
+        │
+   Generate report → Save to diagnostics\
+```
+
+## 🛠️ Management Commands
 
 ```powershell
-# 查看计划任务状态
+# Check scheduled task status
 Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
 
-# 查看实时日志
-Get-Content 'D:\.openclaw\logs\openclaw-monitor-20260415.log' -Tail 20 -Wait
+# View real-time logs
+Get-Content 'D:\.openclaw\logs\openclaw-monitor\openclaw-monitor-20260415.log' -Tail 20 -Wait
 
-# 停止监控
+# Stop monitor
 Stop-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 
-# 手动启动监控
+# Start monitor manually
 Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 ```
 
-## ✅ 健康判断标准
+## ✅ Health Criteria
 
-满足以下**任一条件**即视为健康：
+Gateway is considered **healthy** if ANY of:
 
-- `openclaw health` 输出包含 `Feishu: ok`
-- `openclaw gateway status` 输出 `Runtime: running`
-- `openclaw gateway status` 输出 `RPC probe: ok`
+- `Feishu: ok` in `openclaw health` output
+- `Runtime: running` in `openclaw gateway status` output
+- `RPC probe: ok` in `openclaw gateway status` output
 
-## 🔧 故障排除
+## 🔧 Troubleshooting
 
-当脚本无法自动修复时，会执行以下诊断命令：
+When auto-repair fails, the script runs:
 
 1. `openclaw status`
 2. `openclaw gateway status`
 3. `openclaw doctor`
 4. `openclaw channels status --probe`
 
-诊断报告保存在 `D:\.openclaw\logs\diagnostics\` 目录。
+Diagnostic reports are saved to the `diagnostics\` subdirectory.
 
-官方故障排除文档：https://docs.openclaw.ai/troubleshooting
+Official docs: https://docs.openclaw.ai/troubleshooting
 
-## 📄 开源协议
+## 📄 License
 
 MIT
