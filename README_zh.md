@@ -10,6 +10,54 @@
 
 OpenClaw Gateway 自动化监控脚本，支持自动重启和故障排除。
 
+## 🚀 快速开始
+
+### 一键安装（推荐）
+
+**无需下载**，直接运行以下命令：
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -UseBasicParsing).Content" -RunNow
+```
+
+### 手动安装
+
+1. 从 [GitHub](https://github.com/18146706992-sketch/openclaw-gateway-monitor/tree/main/scripts) 下载脚本
+2. 在脚本所在目录打开 PowerShell
+3. 运行：
+```powershell
+.\install-openclaw-monitor.ps1 -RunNow
+```
+
+## 🛠️ 管理命令
+
+### 查看状态
+```powershell
+Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
+```
+
+### 实时查看日志
+```powershell
+Get-Content 'D:\.openclaw\logs\openclaw-monitor\openclaw-monitor-20260415.log' -Tail 20 -Wait
+```
+
+### 停止监控
+```powershell
+Stop-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+```
+
+### 重新启动监控
+```powershell
+Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+```
+
+### 卸载
+```powershell
+powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -UseBasicParsing).Content" -Uninstall
+```
+
+---
+
 ## ✨ 功能特性
 
 - **开机自启动**：通过 Windows 计划任务实现开机自动运行
@@ -17,38 +65,6 @@ OpenClaw Gateway 自动化监控脚本，支持自动重启和故障排除。
 - **自动修复**：重启失败时自动重试（默认 3 次，间隔 60 秒）
 - **故障排除**：修复失败时自动执行诊断并生成报告
 - **日志记录**：日志保存在 OpenClaw 状态目录下的 `openclaw-monitor\` 子目录
-
-## 🚀 快速开始
-
-### 安装（自动开机自启动）
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -RunNow
-```
-
-### 单次检测模式
-
-```powershell
-powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1 -Once
-```
-
-### 持续监控模式
-
-```powershell
-powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1
-```
-
-### 自定义参数
-
-```powershell
-powershell -ExecutionPolicy Bypass -File openclaw-monitor.ps1 -CheckInterval 30 -MaxRetries 5 -RetryWait 120
-```
-
-### 卸载
-
-```powershell
-powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -Uninstall
-```
 
 ## 📡 参数说明
 
@@ -71,8 +87,6 @@ powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -Uninstall
     └── diagnostic-YYYYMMDD-HHmmss.txt
 ```
 
-**默认日志路径**：`D:\.openclaw\logs\openclaw-monitor\`
-
 ## 🔄 工作流程
 
 ```
@@ -89,22 +103,6 @@ powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -Uninstall
    全部失败 → 执行故障排除
        │
    生成诊断报告 → 保存到 diagnostics\
-```
-
-## 🛠️ 常用管理命令
-
-```powershell
-# 查看计划任务状态
-Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
-
-# 查看实时日志
-Get-Content 'D:\.openclaw\logs\openclaw-monitor\openclaw-monitor-20260415.log' -Tail 20 -Wait
-
-# 停止监控
-Stop-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
-
-# 手动启动监控
-Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 ```
 
 ## ✅ 健康判断标准
