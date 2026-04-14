@@ -28,6 +28,20 @@ if ($LogDir -eq "") {
 }
 
 # ============================================================
+# Prevent Multiple Instances (using Mutex)
+# ============================================================
+$mutexName = "OpenClawGatewayMonitor_SingleInstance"
+$mutex = New-Object System.Threading.Mutex($false, $mutexName)
+try {
+    if (-not $mutex.WaitOne(0)) {
+        # Another instance is already running, exit silently
+        exit 0
+    }
+} catch {
+    # Mutex creation failed, continue anyway
+}
+
+# ============================================================
 # Helper Functions
 # ============================================================
 
