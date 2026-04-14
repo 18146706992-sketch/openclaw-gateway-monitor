@@ -12,19 +12,20 @@ Automated monitoring script for OpenClaw Gateway with auto-restart and troublesh
 
 ## 🚀 Quick Start
 
-### One-line Install (Recommended)
+### One-line Install
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\install-ocm.ps1\"; & \"$env:TEMP\install-ocm.ps1\" -RunNow"
+powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\openclaw-monitor.ps1\"; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -RunNow"
 ```
 
 > If you get an error, wait 2-3 minutes and try again (GitHub CDN may need time to update).
 
 ### Manual Install
 
-1. Download scripts from [GitHub](https://github.com/18146706992-sketch/openclaw-gateway-monitor/tree/main/scripts)
-2. Open PowerShell in the scripts directory
-3. Run:
+1. Download both scripts from [GitHub](https://github.com/18146706992-sketch/openclaw-gateway-monitor/tree/main/scripts)
+2. Put them in the same folder
+3. Open PowerShell in that folder
+4. Run:
 ```powershell
 .\install-openclaw-monitor.ps1 -RunNow
 ```
@@ -43,7 +44,7 @@ Get-Content "$env:OPENCLAW_STATE_DIR\logs\openclaw-monitor\openclaw-monitor-$(Ge
 
 ### Stop Monitor
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\stop-ocm.ps1\"; & \"$env:TEMP\stop-ocm.ps1\" -Stop"
+powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -Stop"
 ```
 
 ### Restart Monitor
@@ -53,7 +54,7 @@ Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 
 ### Uninstall
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\uninstall-ocm.ps1\"; & \"$env:TEMP\uninstall-ocm.ps1\" -Uninstall"
+powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -Uninstall"
 ```
 
 ---
