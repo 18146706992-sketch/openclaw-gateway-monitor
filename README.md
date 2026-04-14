@@ -17,7 +17,7 @@ Automated monitoring script for OpenClaw Gateway with auto-restart and troublesh
 Run this command **directly from GitHub** — no download required:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "`$temp=[System.IO.Path]::GetTempFileName()+'.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile `$temp; & `$temp -RunNow; Remove-Item `$temp"
+powershell -ExecutionPolicy Bypass -Command 'iwr "https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1" -OutFile "$env:TEMP\install-openclaw-monitor.ps1" -UseBasicParsing; & "$env:TEMP\install-openclaw-monitor.ps1" -RunNow; rm "$env:TEMP\install-openclaw-monitor.ps1"'
 ```
 
 ### Manual Install
@@ -38,7 +38,7 @@ Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
 
 ### View Logs (Real-time)
 ```powershell
-Get-Content 'D:\.openclaw\logs\openclaw-monitor\openclaw-monitor-20260415.log' -Tail 20 -Wait
+Get-Content "$env:OPENCLAW_STATE_DIR\logs\openclaw-monitor\openclaw-monitor-$(Get-Date -Format 'yyyyMMdd').log" -Tail 20 -Wait
 ```
 
 ### Stop Monitor
@@ -53,7 +53,7 @@ Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 
 ### Uninstall
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "`$temp=[System.IO.Path]::GetTempFileName()+'.ps1'; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile `$temp; & `$temp -Uninstall; Remove-Item `$temp"
+powershell -ExecutionPolicy Bypass -Command 'iwr "https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1" -OutFile "$env:TEMP\install-openclaw-monitor.ps1" -UseBasicParsing; & "$env:TEMP\install-openclaw-monitor.ps1" -Uninstall; rm "$env:TEMP\install-openclaw-monitor.ps1"'
 ```
 
 ---
