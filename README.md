@@ -14,11 +14,11 @@ Automated monitoring script for OpenClaw Gateway with auto-restart and troublesh
 
 ### One-line Install (Recommended)
 
-Run this command **directly from GitHub** — no download required:
-
 ```powershell
-powershell -ExecutionPolicy Bypass -Command 'iwr "https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1" -OutFile "$env:TEMP\install-openclaw-monitor.ps1" -UseBasicParsing; & "$env:TEMP\install-openclaw-monitor.ps1" -RunNow; rm "$env:TEMP\install-openclaw-monitor.ps1"'
+powershell -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\install-ocm.ps1\"; & \"$env:TEMP\install-ocm.ps1\" -RunNow"
 ```
+
+> If you get an error, wait 2-3 minutes and try again (GitHub CDN may need time to update).
 
 ### Manual Install
 
@@ -36,14 +36,14 @@ powershell -ExecutionPolicy Bypass -Command 'iwr "https://raw.githubusercontent.
 Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
 ```
 
-### View Logs (Real-time)
+### View Logs
 ```powershell
 Get-Content "$env:OPENCLAW_STATE_DIR\logs\openclaw-monitor\openclaw-monitor-$(Get-Date -Format 'yyyyMMdd').log" -Tail 20 -Wait
 ```
 
 ### Stop Monitor
 ```powershell
-Stop-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+powershell -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\stop-ocm.ps1\"; & \"$env:TEMP\stop-ocm.ps1\" -Stop"
 ```
 
 ### Restart Monitor
@@ -53,78 +53,26 @@ Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
 
 ### Uninstall
 ```powershell
-powershell -ExecutionPolicy Bypass -Command 'iwr "https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1" -OutFile "$env:TEMP\install-openclaw-monitor.ps1" -UseBasicParsing; & "$env:TEMP\install-openclaw-monitor.ps1" -Uninstall; rm "$env:TEMP\install-openclaw-monitor.ps1"'
+powershell -ExecutionPolicy Bypass -Command "iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\uninstall-ocm.ps1\"; & \"$env:TEMP\uninstall-ocm.ps1\" -Uninstall"
 ```
 
 ---
 
 ## ✨ Features
 
-- **Auto-start at boot**: Windows Scheduled Task integration for hands-free operation
-- **Health monitoring**: Uses `openclaw health` and `gateway status` for reliable detection
-- **Auto-repair**: Automatic restart with retry mechanism (3 attempts, 60s interval)
-- **Troubleshooting**: Auto-generates diagnostic reports when repair fails
-- **Logging**: Logs saved to `openclaw-monitor\` under your OpenClaw state directory
-
-## 📡 Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `-CheckInterval` | 60 | Detection interval in seconds |
-| `-MaxRetries` | 3 | Maximum restart retry attempts |
-| `-RetryWait` | 60 | Wait time between retries (seconds) |
-| `-Once` | false | Run single check and exit |
-| `-LogDir` | auto | Log directory (auto-detected) |
+- **Auto-start at boot**: Windows Scheduled Task integration
+- **Health monitoring**: Uses `openclaw health` and `gateway status`
+- **Auto-repair**: 3 retries with 60s interval
+- **Troubleshooting**: Auto-generates diagnostic reports
+- **Logging**: Saved to `openclaw-monitor\` under OpenClaw state directory
 
 ## 📁 Log Directory
 
-Logs are automatically saved to your OpenClaw state directory:
-
 ```
 <OPENCLAW_STATE_DIR>\logs\openclaw-monitor\
-├── openclaw-monitor-YYYYMMDD.log    # Daily monitor logs
-└── diagnostics\                      # Diagnostic reports
-    └── diagnostic-YYYYMMDD-HHmmss.txt
+├── openclaw-monitor-YYYYMMDD.log
+└── diagnostics\diagnostic-YYYYMMDD-HHmmss.txt
 ```
-
-## 🔄 Workflow
-
-```
-Gateway Status Check
-        │
-   Normal → No action
-        │
-   Abnormal → Start/Restart Gateway
-        │
-   Wait 60s → Check again
-        │
-   Still down → Retry (max 3 times)
-        │
-   All failed → Run diagnostics
-        │
-   Generate report → Save to diagnostics\
-```
-
-## ✅ Health Criteria
-
-Gateway is considered **healthy** if ANY of:
-
-- `Feishu: ok` in `openclaw health` output
-- `Runtime: running` in `openclaw gateway status` output
-- `RPC probe: ok` in `openclaw gateway status` output
-
-## 🔧 Troubleshooting
-
-When auto-repair fails, the script runs:
-
-1. `openclaw status`
-2. `openclaw gateway status`
-3. `openclaw doctor`
-4. `openclaw channels status --probe`
-
-Diagnostic reports are saved to the `diagnostics\` subdirectory.
-
-Official docs: https://docs.openclaw.ai/troubleshooting
 
 ## 📄 License
 
