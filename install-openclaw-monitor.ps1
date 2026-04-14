@@ -1,13 +1,13 @@
 # ============================================================
 # OpenClaw Gateway Monitor - Install/Uninstall Script
-# Create Windows Scheduled Task for auto-start at boot
+# Uses Windows Startup Folder for auto-start (no admin required)
 # Usage: 
 #   Install: powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -RunNow
 #   Uninstall: powershell -ExecutionPolicy Bypass -File install-openclaw-monitor.ps1 -Uninstall
 # ============================================================
 
 param(
-    [string]$TaskName = "OpenClawGatewayMonitor",
+    [string]$ScriptName = "OpenClawGatewayMonitor",
     [string]$ScriptPath = "",
     [int]$CheckInterval = 60,
     [int]$MaxRetries = 3,
@@ -22,12 +22,15 @@ if ($ScriptPath -eq "") {
     $ScriptPath = Join-Path (Split-Path $PSCommandPath -Parent) "openclaw-monitor.ps1"
 }
 
-# Determine log directory based on OPENCLAW_STATE_DIR
+# Determine directories
+$startupFolder = [Environment]::GetFolderPath("Startup")
 $logBaseDir = if ($env:OPENCLAW_STATE_DIR) {
     Join-Path $env:OPENCLAW_STATE_DIR "logs"
 } else {
     Join-Path (Split-Path $PSCommandPath -Parent) "logs"
 }
+
+$shortcutPath = Join-Path $startupFolder "$ScriptName.lnk"
 
 $ErrorActionPreference = "Continue"
 
@@ -48,19 +51,38 @@ function Write-Warn($Message) {
 }
 
 # ============================================================
-# Stop Monitor (keep scheduled task, just stop the process)
+# Create Shortcut Function
 # ============================================================
+function New-StartupShortcut {
+    param(
+        [string]$ShortcutPath,
+        [string]$TargetPath,
+        [string]$Arguments,
+        [string]$Description
+    )
+    
+    try {
+        $WshShell = New-Object -ComObject WScript.Shell
+        $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
+        $Shortcut.TargetPath = "powershell.exe"
+        $Shortcut.Arguments = "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$TargetPath`" $Arguments"
+        $Shortcut.Description = $Description
+        $Shortcut.WorkingDirectory = Split-Path $TargetPath -Parent
+        $Shortcut.Save()
+        
+        return $true
+    }
+    catch {
+        Write-Err "Failed to create shortcut: $($_.Exception.Message)"
+        return $false
+    }
+}
 
+# ============================================================
+# Stop Monitor
+# ============================================================
 if ($Stop) {
     Write-Info "Stopping OpenClaw Gateway Monitor..."
-    
-    # Stop scheduled task first
-    try {
-        Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-        Write-Info "Scheduled task stopped"
-    } catch {
-        Write-Warn "Could not stop scheduled task: $($_.Exception.Message)"
-    }
     
     # Stop running monitor processes
     $processes = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | 
@@ -72,7 +94,7 @@ if ($Stop) {
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
                 Write-Info "Stopped monitor process (PID: $($proc.Id))"
             } catch {
-                Write-Warn "Could not stop process $($proc.Id): $($_.Exception.Message)"
+                Write-Warn "Could not stop process $($proc.Id)"
             }
         }
     } else {
@@ -86,11 +108,10 @@ if ($Stop) {
 # ============================================================
 # Uninstall
 # ============================================================
-
 if ($Uninstall) {
     Write-Info "Uninstalling OpenClaw Gateway Monitor..."
     
-    # Step 1: Stop all monitor processes first
+    # Step 1: Stop all monitor processes
     $processes = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | 
         Where-Object { $_.CommandLine -match "openclaw-monitor" }
     
@@ -99,62 +120,34 @@ if ($Uninstall) {
             try {
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
                 Write-Info "Stopped monitor process (PID: $($proc.Id))"
-            } catch {
-                # Ignore errors here
-            }
+            } catch { }
         }
-        Start-Sleep -Seconds 1
+        Start-Sleep -Milliseconds 500
     } else {
         Write-Info "No running monitor process found"
     }
     
-    # Step 2: Try to remove scheduled task
-    $taskRemoved = $false
-    try {
-        $existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-        if ($existingTask) {
-            # Try to stop first
-            try {
-                Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-            } catch {
-                # Ignore if stop fails
-            }
-            
-            # Try to unregister
-            try {
-                Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction Stop
-                Write-Success "Scheduled task removed"
-                $taskRemoved = $true
-            } catch {
-                # Unregister failed - likely permission issue
-                Write-Warn "Could not remove scheduled task automatically"
-            }
-        } else {
-            Write-Info "No scheduled task found"
-            $taskRemoved = $true
+    # Step 2: Remove startup shortcut
+    if (Test-Path $shortcutPath) {
+        try {
+            Remove-Item $shortcutPath -Force -ErrorAction Stop
+            Write-Success "Startup shortcut removed"
+        } catch {
+            Write-Warn "Could not remove shortcut: $($_.Exception.Message)"
         }
-    } catch {
-        Write-Warn "Error checking scheduled task: $($_.Exception.Message)"
+    } else {
+        Write-Info "No startup shortcut found"
     }
     
-    # Final status
+    # Verify
     $verifyProcess = Get-Process -Name "powershell" -ErrorAction SilentlyContinue | 
         Where-Object { $_.CommandLine -match "openclaw-monitor" }
+    $verifyShortcut = Test-Path $shortcutPath
     
-    if (-not $verifyProcess) {
-        Write-Success "Monitor process stopped"
-    }
-    
-    if ($taskRemoved) {
-        Write-Success "Uninstall complete"
+    if (-not $verifyProcess -and -not $verifyShortcut) {
+        Write-Success "Uninstall complete - all components removed"
     } else {
-        Write-Info ""
-        Write-Info "=========================================="
-        Write-Info "Manual cleanup required:"
-        Write-Info "  1. Open Task Scheduler (taskschd.msc)"
-        Write-Info "  2. Find task: $TaskName"
-        Write-Info "  3. Right-click -> Delete"
-        Write-Info "=========================================="
+        Write-Warn "Uninstall completed with warnings"
     }
     
     exit 0
@@ -163,13 +156,12 @@ if ($Uninstall) {
 # ============================================================
 # Install
 # ============================================================
-
 Write-Info "=========================================="
 Write-Info "OpenClaw Gateway Monitor Installer"
 Write-Info "=========================================="
 Write-Info ""
 
-# Verify script exists
+# Verify monitor script exists
 if (!(Test-Path $ScriptPath)) {
     Write-Err "Monitor script not found: $ScriptPath"
     exit 1
@@ -191,99 +183,64 @@ if (!(Test-Path $logBaseDir)) {
     Write-Info "Created log directory: $logBaseDir"
 }
 
-# Build task arguments
-$scriptArgs = @(
-    "-ExecutionPolicy", "Bypass",
-    "-NoProfile",
-    "-File", "`"$ScriptPath`"",
-    "-CheckInterval", "$CheckInterval",
-    "-MaxRetries", "$MaxRetries",
-    "-RetryWait", "$RetryWait"
-)
+# Build startup arguments
+$startupArgs = "-CheckInterval $CheckInterval -MaxRetries $MaxRetries -RetryWait $RetryWait"
 
-# Remove existing task if present
-$existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-if ($existingTask) {
-    Write-Info "Existing scheduled task found, removing..."
+# Remove existing shortcut if present
+if (Test-Path $shortcutPath) {
+    Write-Info "Existing startup shortcut found, removing..."
     try {
-        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-Item $shortcutPath -Force -ErrorAction Stop
     } catch {
-        Write-Warn "Could not remove existing task: $($_.Exception.Message)"
+        Write-Warn "Could not remove existing shortcut: $($_.Exception.Message)"
     }
 }
 
-# Create scheduled task action
-$taskAction = New-ScheduledTaskAction `
-    -Execute "powershell.exe" `
-    -Argument ($scriptArgs -join " ")
+# Create startup shortcut
+Write-Info "Creating startup shortcut..."
+$created = New-StartupShortcut -ShortcutPath $shortcutPath -TargetPath $ScriptPath -Arguments $startupArgs -Description "OpenClaw Gateway Monitor"
 
-# Create trigger (at system startup)
-$taskTrigger = New-ScheduledTaskTrigger `
-    -AtStartup
-
-# Create settings
-$taskSettings = New-ScheduledTaskSettingsSet `
-    -AllowStartIfOnBatteries `
-    -DontStopIfGoingOnBatteries `
-    -StartWhenAvailable `
-    -RunOnlyIfNetworkAvailable:$false `
-    -DontStopOnIdleEnd
-
-# Create principal
-$taskPrincipal = New-ScheduledTaskPrincipal `
-    -UserId $env:USERNAME `
-    -LogonType Interactive `
-    -RunLevel Limited
-
-# Register scheduled task
-try {
-    Register-ScheduledTask `
-        -TaskName $TaskName `
-        -Action $taskAction `
-        -Trigger $taskTrigger `
-        -Settings $taskSettings `
-        -Principal $taskPrincipal `
-        -Description "OpenClaw Gateway Monitor - Auto-detect and repair Gateway issues" `
-        -Force
-    
-    Write-Success "Scheduled task created: $TaskName"
-}
-catch {
-    Write-Err "Failed to create scheduled task: $($_.Exception.Message)"
-    Write-Info "Try running as administrator"
+if ($created) {
+    Write-Success "Startup shortcut created: $shortcutPath"
+} else {
+    Write-Err "Failed to create startup shortcut"
     exit 1
 }
 
-# Show task info
+# Show info
 Write-Info ""
 Write-Info "=========================================="
 Write-Info "Installation Complete!"
 Write-Info "=========================================="
 Write-Info ""
-Write-Info "Task Name: $TaskName"
-Write-Info "Trigger: System startup"
+Write-Info "Startup Shortcut: $shortcutPath"
+Write-Info "Monitor Script: $ScriptPath"
 Write-Info "Check Interval: ${CheckInterval} seconds"
-Write-Info "Max Retries: ${MaxRetries} (wait ${RetryWait}s between retries)"
+Write-Info "Max Retries: ${MaxRetries}"
+Write-Info "Retry Wait: ${RetryWait} seconds"
 Write-Info "Log Location: $logBaseDir\openclaw-monitor\"
-Write-Info "Diagnostic Reports: $logBaseDir\openclaw-monitor\diagnostics\"
 Write-Info ""
 
 # Run now if requested
 if ($RunNow) {
     Write-Info "Starting monitor service..."
-    Start-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    $args = "-ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -File `"$ScriptPath`" $startupArgs"
+    Start-Process -FilePath "powershell.exe" -ArgumentList $args
     Start-Sleep -Seconds 2
-    
-    $taskState = (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue).State
-    Write-Info "Task State: $taskState"
+    Write-Success "Monitor started"
+}
+
+# Verify startup shortcut exists
+if (Test-Path $shortcutPath) {
+    Write-Success "Startup shortcut verified"
 }
 
 # Common commands
+Write-Info ""
 Write-Info "=========================================="
-Write-Info "Common Commands:"
-Write-Info "  Check status: Get-ScheduledTask -TaskName '$TaskName' | Get-ScheduledTaskInfo"
-Write-Info "  Start: Start-ScheduledTask -TaskName '$TaskName'"
-Write-Info "  Stop: powershell -ExecutionPolicy Bypass -File '$PWD\install-openclaw-monitor.ps1' -Stop"
+Write-Info "Management Commands:"
+Write-Info "  Check status: Get-Process powershell | Where-Object {`$_.CommandLine -match 'openclaw-monitor'}"
 Write-Info "  View logs: Get-Content '$logBaseDir\openclaw-monitor\openclaw-monitor-$(Get-Date -Format 'yyyyMMdd').log' -Tail 20 -Wait"
-Write-Info "  Uninstall: powershell -ExecutionPolicy Bypass -File '$PWD\install-openclaw-monitor.ps1' -Uninstall"
+Write-Info "  Stop: powershell -ExecutionPolicy Bypass -File '$PSCommandPath' -Stop"
+Write-Info "  Uninstall: powershell -ExecutionPolicy Bypass -File '$PSCommandPath' -Uninstall"
 Write-Info "=========================================="
