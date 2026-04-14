@@ -15,7 +15,7 @@ OpenClaw Gateway 自动化监控脚本，支持自动重启和故障排除。
 ### 一键安装
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\openclaw-monitor.ps1\"; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -RunNow"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\openclaw-monitor.ps1') -UseBasicParsing; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -RunNow"
 ```
 
 > 如果报错，请等待 2-3 分钟后重试（GitHub CDN 可能需要时间更新）。
@@ -34,7 +34,7 @@ powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr
 
 ### 查看状态
 ```powershell
-Get-ScheduledTask -TaskName 'OpenClawGatewayMonitor' | Get-ScheduledTaskInfo
+Get-Process powershell | Where-Object {$_.CommandLine -match 'openclaw-monitor'}
 ```
 
 ### 查看日志
@@ -44,25 +44,26 @@ Get-Content "$env:OPENCLAW_STATE_DIR\logs\openclaw-monitor\openclaw-monitor-$(Ge
 
 ### 停止监控
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -Stop"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -Stop"
 ```
 
 ### 重新启动监控
 ```powershell
-Start-ScheduledTask -TaskName 'OpenClawGatewayMonitor'
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\openclaw-monitor.ps1') -UseBasicParsing; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -RunNow"
 ```
 
 ### 卸载
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "mkdir \"$env:TEMP\ocm\" -Force; iwr 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile \"$env:TEMP\ocm\install-openclaw-monitor.ps1\"; & \"$env:TEMP\ocm\install-openclaw-monitor.ps1\" -Uninstall"
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Path ([System.IO.Path]::GetTempPath() + 'ocm') -Force | Out-Null; Invoke-WebRequest 'https://raw.githubusercontent.com/18146706992-sketch/openclaw-gateway-monitor/main/scripts/install-openclaw-monitor.ps1' -OutFile ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -UseBasicParsing; & ([System.IO.Path]::GetTempPath() + 'ocm\install-openclaw-monitor.ps1') -Uninstall"
 ```
 
 ---
 
 ## ✨ 功能特性
 
-- **开机自启动**：Windows 计划任务
-- **健康监控**：`openclaw health` 和 `gateway status`
+- **开机自启动**：Windows 启动文件夹（无需管理员权限）
+- **静默运行**：后台隐藏窗口
+- **单实例**：防止多个监控同时运行
 - **自动修复**：3 次重试，间隔 60 秒
 - **故障排除**：自动生成诊断报告
 - **日志记录**：保存在 OpenClaw 状态目录的 `openclaw-monitor\` 下
